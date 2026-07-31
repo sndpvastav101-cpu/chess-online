@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChessOnline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<section id="authScreen" class="screen">
+  <div class="auth-card">
+    <div class="auth-card-heading">
+      <span class="crest">&#9812;</span>
+      <h2>Welcome to ChessOnline</h2>
+      <p class="hint">Play real-time chess with friends, strangers, or the bot.</p>
+    </div>
+
+    <div id="googleSignInBtn"></div>
+    <p id="googleUnavailableMsg" class="hint hidden">Google sign-in isn't configured yet - use email below.</p>
+
+    <button id="guestBtn" type="button" class="guest-btn">Play as Guest</button>
+    <p class="hint guest-hint">No email needed - a temporary ID is created for you and removed once your match ends.</p>
+
+    <div class="divider"><span>or use an account</span></div>
+
+    <div class="tabs">
+      <button id="tabLogin" class="tab active">Login</button>
+      <button id="tabRegister" class="tab">Register</button>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <input type="text" id="loginUserOrEmail" placeholder="Username or Email" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+      <button type="submit">Login</button>
+      <p class="err" id="loginErr"></p>
+    </form>
+
+    <form id="registerForm" class="auth-form hidden">
+      <input type="text" id="regUsername" placeholder="Choose a username" required>
+      <input type="email" id="regEmail" placeholder="Email address" required>
+      <input type="password" id="regPassword" placeholder="Choose a password (6+ chars)" required>
+      <button type="submit">Create Account</button>
+      <p class="err" id="registerErr"></p>
+    </form>
+  </div>
+</section>
+
+<!-- APP SHELL (sidebar + content) shown once logged in -->
+<div id="appShell" class="app-shell hidden">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><span class="brand-icon">&#9819;</span> ChessOnline</div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-section="playSection">
+        <span class="nav-icon">&#9817;</span> Play
+      </button>
+      <button class="nav-item" data-section="tournamentsSection">
+        <span class="nav-icon">&#127942;</span> Tournaments
+      </button>
+      <button class="nav-item" data-section="variantsSection">
+        <span class="nav-icon">&#9821;</span> Variants
+      </button>
+      <button class="nav-item" data-section="leaderboardSection">
+        <span class="nav-icon">&#9819;</span> Leaderboard
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="soundToggleBtn" class="sound-toggle" title="Toggle sound">&#128266; Sound On</button>
+      <div id="userBadge" class="user-badge">
+        <span id="userName"></span>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- PLAY SECTION -->
+    <section id="playSection" class="content-section">
+      <h1 class="section-title">Play Chess</h1>
+      <p class="section-subtitle">Choose how you'd like to play right now.</p>
+
+      <div class="cards-grid">
+        <div class="play-card featured">
+          <div class="play-card-icon">&#9889;</div>
+          <div class="play-card-body">
+            <h3>Play Online</h3>
+            <p>Get matched instantly with another online player of similar rating.</p>
+            <label>Time Control</label>
+            <select id="quickTimeControl">
+              <option value="bullet">Bullet (1+0)</option>
+              <option value="blitz" selected>Blitz (5+3)</option>
+              <option value="rapid">Rapid (10+5)</option>
+              <option value="classical">Classical (30+15)</option>
+            </select>
+            <button id="quickMatchBtn">Find Opponent</button>
+            <button id="cancelQuickMatchBtn" class="secondary hidden">Cancel Searching...</button>
+          </div>
+        </div>
+
+        <div class="play-card">
+          <div class="play-card-icon">&#128187;</div>
+          <div class="play-card-body">
+            <h3>Play Bots</h3>
+            <p>Challenge a built-in bot from Easy to Hard - available any time.</p>
+            <label>Difficulty</label>
+            <select id="botDifficulty">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+            <label>Time Control</label>
+            <select id="botTimeControl">
+              <option value="bullet">Bullet (1+0)</option>
+              <option value="blitz" selected>Blitz (5+3)</option>
+              <option value="rapid">Rapid (10+5)</option>
+              <option value="classical">Classical (30+15)</option>
+            </select>
+            <button id="startBotGame">Play vs Bot</button>
+          </div>
+        </div>
+
+        <div class="play-card">
+          <div class="play-card-icon">&#129309;</div>
+          <div class="play-card-body">
+            <h3>Play a Friend</h3>
+            <p>Challenge someone directly using their unique Player ID.</p>
+            <label>Your Player ID (share this privately)</label>
+            <div id="myPlayerIdBox" class="id-box"></div>
+            <label>Their Player ID</label>
+            <input type="text" id="challengePlayerId" placeholder="e.g. CHESS-7F3A9K">
+            <label>Time Control</label>
+            <select id="challengeTimeControl">
+              <option value="bullet">Bullet (1+0)</option>
+              <option value="blitz" selected>Blitz (5+3)</option>
+              <option value="rapid">Rapid (10+5)</option>
+              <option value="classical">Classical (30+15)</option>
+            </select>
+            <button id="sendChallengeBtn">Send Challenge</button>
+          </div>
+        </div>
+
+        <div class="play-card coming-soon-card">
+          <div class="play-card-icon">&#127942;</div>
+          <div class="play-card-body">
+            <h3>Tournaments <span class="soon-tag">Coming Soon</span></h3>
+            <p>Join scheduled arenas and brackets where anyone can win prizes or bragging rights.</p>
+            <button class="secondary" disabled>Notify Me</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel players-online-panel">
+        <h3>Players Online</h3>
+        <ul id="onlineList" class="online-list"></ul>
+        <p class="hint" id="noOneOnline">No one else is online right now - try Play Bots while you wait.</p>
+      </div>
+    </section>
+
+    <!-- TOURNAMENTS SECTION (placeholder) -->
+    <section id="tournamentsSection" class="content-section hidden">
+      <h1 class="section-title">Tournaments</h1>
+      <p class="section-subtitle">Scheduled arenas and elimination brackets.</p>
+      <div class="panel coming-soon-panel">
+        <div class="coming-soon-icon">&#127942;</div>
+        <h3>Coming Soon</h3>
+        <p class="hint">Tournament brackets, scheduled arenas, and prize tracking are on the roadmap. Ask to have this built next!</p>
+      </div>
+    </section>
+
+    <!-- VARIANTS SECTION (placeholder, Standard already live) -->
+    <section id="variantsSection" class="content-section hidden">
+      <h1 class="section-title">Variants</h1>
+      <p class="section-subtitle">Different ways to play the game you love.</p>
+      <div class="cards-grid">
+        <div class="play-card">
+          <div class="play-card-icon">&#9818;</div>
+          <div class="play-card-body">
+            <h3>Standard <span class="live-tag">Live</span></h3>
+            <p>The classic game - already available from the Play tab.</p>
+          </div>
+        </div>
+        <div class="play-card coming-soon-card">
+          <div class="play-card-icon">&#127922;</div>
+          <div class="play-card-body">
+            <h3>Chess960 <span class="soon-tag">Coming Soon</span></h3>
+            <p>Randomized starting positions for a fresh challenge every game.</p>
+          </div>
+        </div>
+        <div class="play-card coming-soon-card">
+          <div class="play-card-icon">&#9968;</div>
+          <div class="play-card-body">
+            <h3>King of the Hill <span class="soon-tag">Coming Soon</span></h3>
+            <p>Win by checkmate, or by marching your king to the center.</p>
+          </div>
+        </div>
+        <div class="play-card coming-soon-card">
+          <div class="play-card-icon">3&#65039;&#8419;</div>
+          <div class="play-card-body">
+            <h3>3-Check <span class="soon-tag">Coming Soon</span></h3>
+            <p>Deliver check three times to win the game outright.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEADERBOARD SECTION -->
+    <section id="leaderboardSection" class="content-section hidden">
+      <h1 class="section-title">Leaderboard</h1>
+      <p class="section-subtitle">Top-rated players on ChessOnline.</p>
+      <div class="panel">
+        <ol id="leaderboardList" class="leaderboard-list"></ol>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- GAME SCREEN -->
+<section id="gameScreen" class="screen hidden">
+  <div class="game-layout">
+    <div class="board-area">
+      <div class="player-info top">
+        <span id="opponentName"></span>
+        <span id="clockBlack" class="clock">00:00</span>
+      </div>
+      <div id="board" style="width: 480px;"></div>
+      <div class="player-info bottom">
+        <span id="youName"></span>
+        <span id="clockWhite" class="clock">00:00</span>
+      </div>
+      <div class="game-controls">
+        <button id="resignBtn">Resign</button>
+      </div>
+    </div>
+    <div class="side-panel">
+      <h3>Move History</h3>
+      <ol id="moveHistory" class="move-history"></ol>
+    </div>
+  </div>
+</section>
+
+<!-- CHALLENGE POPUP -->
+<div id="challengePopup" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="challengeText"></h3>
+    <button id="acceptChallengeBtn">Accept</button>
+    <button id="declineChallengeBtn" class="secondary">Decline</button>
+  </div>
+</div>
+
+<!-- GAME OVER POPUP -->
+<div id="gameOverPopup" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="gameOverText"></h3>
+    <button id="backToLobbyBtn">Back to Lobby</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
