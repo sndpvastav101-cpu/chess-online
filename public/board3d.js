@@ -17,68 +17,108 @@
     return { x: file - 3.5, z: 3.5 - rank };
   }
 
+  function addContactShadow(group) {
+    const shadow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.4, 32),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false })
+    );
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = 0.001;
+    group.add(shadow);
+  }
+
   function buildPieceMesh(type, color) {
     const c = PIECE_COLORS[color];
     const mat = new THREE.MeshStandardMaterial({
-      color: c.body, metalness: 0.35, roughness: 0.45,
+      color: c.body, metalness: 0.32, roughness: 0.4,
       emissive: c.emissive, emissiveIntensity: 0.15
     });
-    const trimMat = new THREE.MeshStandardMaterial({ color: c.trim, metalness: 0.65, roughness: 0.28 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: c.trim, metalness: 0.7, roughness: 0.22 });
     const group = new THREE.Group();
 
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 0.14, 24), mat);
-    base.position.y = 0.07;
-    group.add(base);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.15, 32), mat);
+    base.position.y = 0.075;
+    const collarRing = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.025, 10, 32), trimMat);
+    collarRing.rotation.x = Math.PI / 2;
+    collarRing.position.y = 0.15;
+    group.add(base, collarRing);
+    addContactShadow(group);
 
     if (type === 'p') {
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.28, 16), mat);
-      stem.position.y = 0.28;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), mat);
-      head.position.y = 0.56;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.21, 0.3, 24), mat);
+      stem.position.y = 0.3;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 24, 20), mat);
+      head.position.y = 0.6;
       group.add(stem, head);
     } else if (type === 'r') {
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.3, 0.5, 16), mat);
-      body.position.y = 0.39;
-      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 8), trimMat);
-      top.position.y = 0.69;
-      group.add(body, top);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.29, 0.5, 24), mat);
+      body.position.y = 0.4;
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.1, 24), mat);
+      top.position.y = 0.7;
+      const battlements = new THREE.Group();
+      for (let i = 0; i < 4; i++) {
+        const cren = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.09, 0.11), trimMat);
+        const ang = (Math.PI / 2) * i + Math.PI / 4;
+        cren.position.set(Math.cos(ang) * 0.24, 0.79, Math.sin(ang) * 0.24);
+        battlements.add(cren);
+      }
+      group.add(body, top, battlements);
     } else if (type === 'n') {
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 0.4, 16), mat);
-      neck.position.y = 0.34;
-      const head = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.42), mat);
-      head.position.set(0, 0.6, 0.08);
-      head.rotation.x = -0.35;
-      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 8), mat);
-      ear.position.set(0, 0.78, -0.02);
-      ear.rotation.x = -0.35;
-      group.add(neck, head, ear);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.25, 0.38, 24), mat);
+      neck.position.y = 0.33;
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.34, 0.46), mat);
+      head.position.set(0, 0.62, 0.06);
+      head.rotation.x = -0.4;
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.16, 0.22), mat);
+      snout.position.set(0, 0.5, 0.32);
+      snout.rotation.x = -0.4;
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.17, 10), mat);
+      ear.position.set(0.06, 0.83, -0.06);
+      ear.rotation.x = -0.4;
+      const ear2 = ear.clone();
+      ear2.position.x = -0.06;
+      group.add(neck, head, snout, ear, ear2);
     } else if (type === 'b') {
-      const body = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.55, 20), mat);
-      body.position.y = 0.415;
-      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), trimMat);
-      tip.position.y = 0.75;
-      group.add(body, tip);
-    } else if (type === 'q') {
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 0.58, 20), mat);
+      const body = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.5, 28), mat);
       body.position.y = 0.43;
-      const crown = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), mat);
-      crown.position.y = 0.77;
-      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 10), trimMat);
-      spike.position.y = 0.96;
-      group.add(body, crown, spike);
+      const notch = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.02, 8, 24), trimMat);
+      notch.rotation.x = Math.PI / 2;
+      notch.position.y = 0.62;
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.085, 16, 14), trimMat);
+      tip.position.y = 0.76;
+      group.add(body, notch, tip);
+    } else if (type === 'q') {
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.27, 0.56, 28), mat);
+      body.position.y = 0.44;
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.03, 10, 28), trimMat);
+      collar.rotation.x = Math.PI / 2;
+      collar.position.y = 0.72;
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(0.19, 20, 18), mat);
+      crown.position.y = 0.86;
+      const spikeGeo = new THREE.ConeGeometry(0.045, 0.16, 10);
+      for (let i = 0; i < 5; i++) {
+        const spike = new THREE.Mesh(spikeGeo, trimMat);
+        const ang = (Math.PI * 2 * i) / 5;
+        spike.position.set(Math.cos(ang) * 0.14, 0.98, Math.sin(ang) * 0.14);
+        group.add(spike);
+      }
+      group.add(body, collar, crown);
     } else if (type === 'k') {
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.3, 0.62, 20), mat);
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.29, 0.6, 28), mat);
       body.position.y = 0.45;
-      const collar = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), mat);
-      collar.position.y = 0.78;
-      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.26, 0.06), trimMat);
-      crossV.position.y = 1.0;
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.03, 10, 28), trimMat);
+      collar.rotation.x = Math.PI / 2;
+      collar.position.y = 0.76;
+      const crownTop = new THREE.Mesh(new THREE.SphereGeometry(0.18, 20, 18), mat);
+      crownTop.position.y = 0.9;
+      const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.28, 0.06), trimMat);
+      crossV.position.y = 1.15;
       const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, 0.06), trimMat);
-      crossH.position.y = 0.95;
-      group.add(body, collar, crossV, crossH);
+      crossH.position.y = 1.1;
+      group.add(body, collar, crownTop, crossV, crossH);
     }
 
-    group.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    group.traverse((o) => { if (o.isMesh && o.geometry.type !== 'CircleGeometry') { o.castShadow = true; o.receiveShadow = true; } });
     return group;
   }
 
@@ -117,36 +157,44 @@
     this.container.innerHTML = '';
     this.container.appendChild(this.renderer.domElement);
 
-    this.scene.add(new THREE.AmbientLight(0xfff2d9, 0.55));
-    const key = new THREE.DirectionalLight(0xfff2d9, 1.05);
+    this.scene.add(new THREE.AmbientLight(0xfff2d9, 0.62));
+    const key = new THREE.DirectionalLight(0xfff2d9, 1.1);
     key.position.set(4, 8, 5);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.left = -6; key.shadow.camera.right = 6;
-    key.shadow.camera.top = 6; key.shadow.camera.bottom = -6;
+    key.shadow.camera.left = -5.5; key.shadow.camera.right = 5.5;
+    key.shadow.camera.top = 5.5; key.shadow.camera.bottom = -5.5;
+    key.shadow.bias = -0.0015;
     this.scene.add(key);
-    const rim = new THREE.PointLight(0xd4af37, 0.5, 20);
+    const fill = new THREE.DirectionalLight(0xffe9c4, 0.35);
+    fill.position.set(-5, 4, -3);
+    this.scene.add(fill);
+    const rim = new THREE.PointLight(0xd4af37, 0.4, 20);
     rim.position.set(-4, 3, -4);
     this.scene.add(rim);
 
+    // The board stays put - a fixed, considered angle reads as a real
+    // chess set rather than a toy you have to fight to look at. Only
+    // gentle zoom is allowed; no free rotation, so nothing ever feels
+    // like it's drifting or spinning under the player's thumb.
     if (THREE.OrbitControls) {
       this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
       this.controls.enablePan = false;
-      this.controls.minDistance = 5;
-      this.controls.maxDistance = 11;
-      this.controls.minPolarAngle = Math.PI / 6;
-      this.controls.maxPolarAngle = Math.PI / 2.15;
+      this.controls.enableRotate = false;
+      this.controls.enableZoom = true;
+      this.controls.minDistance = 7.5;
+      this.controls.maxDistance = 10.5;
       this.controls.target.set(0, 0, 0);
       this.controls.enableDamping = true;
-      this.controls.dampingFactor = 0.08;
-      this.controls.rotateSpeed = 0.5;
+      this.controls.dampingFactor = 0.12;
+      this.controls.zoomSpeed = 0.6;
       this.controls.update();
     }
   };
 
   Board3D.prototype._setCameraForOrientation = function () {
     const flip = this.orientation === 'black' ? -1 : 1;
-    this.camera.position.set(0, 7.2, 6.3 * flip);
+    this.camera.position.set(0, 5.6, 7.9 * flip);
     this.camera.lookAt(0, 0, 0);
   };
 
