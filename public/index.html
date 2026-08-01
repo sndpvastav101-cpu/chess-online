@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ChessOnline</title>
-<meta name="description" content="Play real-time chess online for free - challenge friends, get matched with players of similar rating, or practice against bots. No downloads needed.">
+<meta name="description" content="Play real-time chess online for free in a real 3D board - challenge friends, get matched with players of similar rating, or practice against bots. No downloads needed.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
 <link rel="stylesheet" href="style.css">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9944249287299315" crossorigin="anonymous"></script>
 </head>
@@ -55,6 +54,7 @@
 
 <!-- APP SHELL (sidebar + content) shown once logged in -->
 <div id="appShell" class="app-shell hidden">
+  <div class="mobile-topbar" id="mobileTopbar"></div>
   <aside class="sidebar">
     <div class="sidebar-brand"><span class="brand-icon">&#9819;</span> ChessOnline</div>
     <nav class="sidebar-nav">
@@ -62,7 +62,7 @@
         <span class="nav-icon">&#9817;</span> Play
       </button>
       <button class="nav-item" data-section="tournamentsSection">
-        <span class="nav-icon">&#127942;</span> Tournaments
+        <span class="nav-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z"/><path d="M7 5H4v1a4 4 0 0 0 4 4"/><path d="M17 5h3v1a4 4 0 0 1-4 4"/><path d="M12 12v4"/><path d="M9 20h6"/><path d="M10 16h4v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-2Z"/></svg></span> Tournaments
       </button>
       <button class="nav-item" data-section="variantsSection">
         <span class="nav-icon">&#9821;</span> Variants
@@ -72,7 +72,7 @@
       </button>
     </nav>
     <div class="sidebar-footer">
-      <button id="soundToggleBtn" class="sound-toggle" title="Toggle sound">&#128266; Sound On</button>
+      <button id="soundToggleBtn" class="sound-toggle" title="Toggle sound"></button>
       <div id="userBadge" class="user-badge">
         <span id="userName"></span>
         <button id="logoutBtn">Logout</button>
@@ -89,7 +89,7 @@
 
       <div class="cards-grid">
         <div class="play-card featured">
-          <div class="play-card-icon">&#9889;</div>
+          <div class="play-card-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z"/></svg></div>
           <div class="play-card-body">
             <h3>Play Online</h3>
             <p>Get matched instantly with another online player of similar rating.</p>
@@ -106,7 +106,7 @@
         </div>
 
         <div class="play-card">
-          <div class="play-card-icon">&#128187;</div>
+          <div class="play-card-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="14" height="11" rx="2"/><path d="M9 7V4h6v3"/><circle cx="9" cy="12.5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="12.5" r="1" fill="currentColor" stroke="none"/><path d="M9 16h6"/><path d="M3 10v4"/><path d="M21 10v4"/></svg></div>
           <div class="play-card-body">
             <h3>Play Bots</h3>
             <p>Challenge a built-in bot from Easy to Hard - available any time.</p>
@@ -128,7 +128,7 @@
         </div>
 
         <div class="play-card">
-          <div class="play-card-icon">&#129309;</div>
+          <div class="play-card-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M2 19c0-3 2.5-5 6-5s6 2 6 5"/><circle cx="17" cy="7" r="2.4"/><path d="M14.2 12.3c.8-.3 1.6-.4 2.5-.4 3 0 5.3 2 5.3 4.9"/></svg></div>
           <div class="play-card-body">
             <h3>Play a Friend</h3>
             <p>Challenge someone directly using their unique Player ID.</p>
@@ -148,7 +148,7 @@
         </div>
 
         <div class="play-card coming-soon-card">
-          <div class="play-card-icon">&#127942;</div>
+          <div class="play-card-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z"/><path d="M7 5H4v1a4 4 0 0 0 4 4"/><path d="M17 5h3v1a4 4 0 0 1-4 4"/><path d="M12 12v4"/><path d="M9 20h6"/><path d="M10 16h4v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-2Z"/></svg></div>
           <div class="play-card-body">
             <h3>Tournaments <span class="soon-tag">Coming Soon</span></h3>
             <p>Join scheduled arenas and brackets where anyone can win prizes or bragging rights.</p>
@@ -169,7 +169,7 @@
       <h1 class="section-title">Tournaments</h1>
       <p class="section-subtitle">Scheduled arenas and elimination brackets.</p>
       <div class="panel coming-soon-panel">
-        <div class="coming-soon-icon">&#127942;</div>
+        <div class="coming-soon-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z"/><path d="M7 5H4v1a4 4 0 0 0 4 4"/><path d="M17 5h3v1a4 4 0 0 1-4 4"/><path d="M12 12v4"/><path d="M9 20h6"/><path d="M10 16h4v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-2Z"/></svg></div>
         <h3>Coming Soon</h3>
         <p class="hint">Tournament brackets, scheduled arenas, and prize tracking are on the roadmap. Ask to have this built next!</p>
       </div>
@@ -188,21 +188,21 @@
           </div>
         </div>
         <div class="play-card coming-soon-card">
-          <div class="play-card-icon">&#127922;</div>
+          <div class="play-card-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.5" cy="8.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.1" fill="currentColor" stroke="none"/></svg></div>
           <div class="play-card-body">
             <h3>Chess960 <span class="soon-tag">Coming Soon</span></h3>
             <p>Randomized starting positions for a fresh challenge every game.</p>
           </div>
         </div>
         <div class="play-card coming-soon-card">
-          <div class="play-card-icon">&#9968;</div>
+          <div class="play-card-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 18l4-9 5 5 5-5 4 9Z"/><path d="M3 18h18"/><circle cx="7" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="5" r="1.1" fill="currentColor" stroke="none"/><circle cx="17" cy="7.5" r="1.1" fill="currentColor" stroke="none"/></svg></div>
           <div class="play-card-body">
             <h3>King of the Hill <span class="soon-tag">Coming Soon</span></h3>
             <p>Win by checkmate, or by marching your king to the center.</p>
           </div>
         </div>
         <div class="play-card coming-soon-card">
-          <div class="play-card-icon">3&#65039;&#8419;</div>
+          <div class="play-card-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6Z"/><path d="M9.2 12.2l1.8 1.8 3.8-3.8"/></svg></div>
           <div class="play-card-body">
             <h3>3-Check <span class="soon-tag">Coming Soon</span></h3>
             <p>Deliver check three times to win the game outright.</p>
@@ -224,14 +224,24 @@
 </div>
 
 <!-- GAME SCREEN -->
-<section id="gameScreen" class="screen hidden">
+<section id="gameScreen" class="screen game-screen hidden">
+  <div class="game-topbar">
+    <button id="topbarResignBtn" class="icon-btn" title="Resign" aria-label="Resign">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v18"/><path d="M6 4h11l-2.5 3.5L17 11H6"/></svg>
+    </button>
+    <div class="game-topbar-title">Chess Match</div>
+    <button id="historyToggleBtn" class="icon-btn" title="Move history" aria-label="Move history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></svg>
+    </button>
+  </div>
+
   <div class="game-layout">
     <div class="board-area">
       <div class="player-info top">
         <span id="opponentName"></span>
         <span id="clockBlack" class="clock">00:00</span>
       </div>
-      <div id="board" style="width: 480px;"></div>
+      <div id="board"></div>
       <div class="player-info bottom">
         <span id="youName"></span>
         <span id="clockWhite" class="clock">00:00</span>
@@ -240,8 +250,13 @@
         <button id="resignBtn">Resign</button>
       </div>
     </div>
-    <div class="side-panel">
-      <h3>Move History</h3>
+    <div class="side-panel" id="movePanel">
+      <div class="side-panel-header">
+        <h3>Move History</h3>
+        <button id="closeHistoryBtn" class="icon-btn mobile-only" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
       <ol id="moveHistory" class="move-history"></ol>
     </div>
   </div>
@@ -272,10 +287,11 @@
 </footer>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
+<script src="board3d.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

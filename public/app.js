@@ -3,12 +3,26 @@
 let socket = null;
 let token = localStorage.getItem('chess_token') || null;
 let me = null;              // { playerId, username, rating, isGuest, ... }
-let board = null;
+let board3d = null;         // Board3D instance (see board3d.js) - the live 3D board
 let localChess = null;      // chess.js instance used only for move legality on the client
 let currentGame = null;     // last game state we received from server
 let myColor = null;
 let inQuickMatchQueue = false;
 let selectedSquare = null;  // used for click-to-move
+
+// Converts a chess.js instance's position into the { square: {type,color} }
+// map that Board3D.setPosition expects.
+function chessToPiecesMap(chess) {
+  const map = {};
+  const rows = chess.board();
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const sq = rows[r][c];
+      if (sq) map[`${String.fromCharCode(97 + c)}${8 - r}`] = { type: sq.type, color: sq.color };
+    }
+  }
+  return map;
+}
 
 // ---------- Screen helpers ----------
 function showTopLevel(id) {
@@ -31,6 +45,31 @@ function showSection(sectionId) {
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.onclick = () => showSection(btn.dataset.section);
 });
+
+// On narrow screens the sidebar becomes a fixed bottom tab bar (nav items
+// only) and the brand + sound toggle + user badge move up into a slim top
+// bar instead. We relocate the actual DOM nodes rather than duplicating
+// them, so every button keeps the single event listener bound to it.
+function setupResponsiveChrome() {
+  const mq = window.matchMedia('(max-width: 760px)');
+  const topbar = document.getElementById('mobileTopbar');
+  const sidebar = document.querySelector('.sidebar');
+  const brand = document.querySelector('.sidebar-brand');
+  const footer = document.querySelector('.sidebar-footer');
+  if (!topbar || !sidebar || !brand || !footer) return;
+  function apply(isMobile) {
+    if (isMobile) {
+      topbar.appendChild(brand);
+      topbar.appendChild(footer);
+    } else {
+      sidebar.insertBefore(brand, sidebar.firstChild);
+      sidebar.appendChild(footer);
+    }
+  }
+  apply(mq.matches);
+  mq.addEventListener('change', (e) => apply(e.matches));
+}
+setupResponsiveChrome();
 
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -107,9 +146,11 @@ function stopAmbient() {
   ambientNodes = null;
 }
 
+const SOUND_ON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const SOUND_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9l5 6"/><path d="M21 9l-5 6"/></svg>';
 const soundToggleBtn = document.getElementById('soundToggleBtn');
 function refreshSoundBtn() {
-  soundToggleBtn.innerHTML = soundOn ? '&#128266; Sound On' : '&#128263; Sound Off';
+  soundToggleBtn.innerHTML = (soundOn ? SOUND_ON_SVG : SOUND_OFF_SVG) + (soundOn ? ' Sound On' : ' Sound Off');
 }
 refreshSoundBtn();
 soundToggleBtn.onclick = () => {
@@ -278,7 +319,10 @@ function connectSocket() {
   socket.on('game:update', (state) => updateGameUI(state));
   socket.on('game:clock', ({ clocks }) => updateClocks(clocks));
   socket.on('game:illegal', () => {
-    if (board && currentGame) board.position(currentGame.fen);
+    if (board3d && currentGame) {
+      localChess = new Chess(currentGame.fen);
+      board3d.setPosition(chessToPiecesMap(localChess));
+    }
     soundIllegal();
     toast('Illegal move');
   });
@@ -361,66 +405,27 @@ document.getElementById('sendChallengeBtn').onclick = () => {
   toast('Challenge sent! Waiting for response...');
 };
 
-// ---------- Legal-move highlighting ----------
-const whiteSquareGrey = '#a9a9a9';
-const blackSquareGrey = '#696969';
-
-function removeGreySquares() {
-  document.querySelectorAll('#board .square-55d63').forEach(sq => {
-    sq.style.background = '';
-    sq.classList.remove('selected-square');
-  });
-}
-
-function greySquare(square) {
-  const squareEl = document.querySelector('#board .square-' + square);
-  if (!squareEl) return;
-  const background = squareEl.classList.contains('black-3c85d') ? blackSquareGrey : whiteSquareGrey;
-  squareEl.style.background = background;
-}
-
-function onMouseoverSquare(square) {
-  if (!currentGame || currentGame.gameId === undefined) return;
-  if (selectedSquare) return; // a click-selection is active - don't fight it with hover previews
-  if (localChess.turn() !== myColor) return;
-  const moves = localChess.moves({ square, verbose: true });
-  if (moves.length === 0) return;
-  greySquare(square);
-  moves.forEach(m => greySquare(m.to));
-}
-
-function onMouseoutSquare() {
-  if (selectedSquare) return; // keep the click-selected piece's highlights visible
-  removeGreySquares();
-}
-
 // ---------- Click-to-move ----------
-// Lets a player simply click a piece, then click the destination square,
-// instead of having to drag-and-drop every move.
-document.getElementById('board').addEventListener('click', (e) => {
-  const squareEl = e.target.closest('[class*="square-"]');
-  if (!squareEl) return;
-  const match = Array.from(squareEl.classList).find(c => /^square-[a-h][1-8]$/.test(c));
-  if (!match) return;
-  handleSquareClick(match.replace('square-', ''));
-});
-
+// Tap a piece, then tap the destination square - Board3D reports which
+// square was tapped (via raycasting) and calls handleSquareClick for us.
 function selectPiece(square) {
   selectedSquare = square;
-  removeGreySquares();
-  const selEl = document.querySelector('#board .square-' + square);
-  if (selEl) selEl.classList.add('selected-square');
-  localChess.moves({ square, verbose: true }).forEach(m => greySquare(m.to));
+  if (!board3d) return;
+  board3d.clearHighlights();
+  board3d.highlightSelected(square);
+  board3d.showLegalMoves(localChess.moves({ square, verbose: true }).map(m => m.to));
+  highlightCheckIfAny(true);
 }
 
 function clearSelection() {
   selectedSquare = null;
-  removeGreySquares();
+  if (board3d) board3d.clearHighlights();
+  highlightCheckIfAny(true);
 }
 
 function handleSquareClick(square) {
   if (!currentGame || currentGame.gameId === undefined) return;
-  if (!localChess || !board) return;
+  if (!localChess || !board3d) return;
   if (localChess.turn() !== myColor) return;
 
   const pieceAtSquare = localChess.get ? localChess.get(square) : null;
@@ -435,7 +440,7 @@ function handleSquareClick(square) {
       clearSelection();
       const move = localChess.move({ from, to: square, promotion: 'q' });
       if (move) {
-        board.position(localChess.fen());
+        board3d.setPosition(chessToPiecesMap(localChess));
         highlightCheckIfAny();
         socket.emit('game:move', { gameId: currentGame.gameId, from, to: square, promotion: 'q' });
       }
@@ -466,23 +471,24 @@ function findKingSquare(chess, color) {
   return null;
 }
 
-function clearCheckHighlight() {
-  document.querySelectorAll('#board .square-55d63').forEach(sq => sq.classList.remove('in-check'));
-}
-
 let lastCheckAnnounced = false;
-function highlightCheckIfAny() {
-  clearCheckHighlight();
-  if (!localChess) return;
+// Pass silent=true when re-applying the highlight after a selection change
+// (it shares the board's square-highlight mechanism with clearHighlights),
+// so we don't re-play the check sound/toast for the same check.
+function highlightCheckIfAny(silent) {
+  if (!board3d) return;
+  if (!localChess) { board3d.highlightCheck(null); return; }
   const inCheck = localChess.in_check ? localChess.in_check() : false;
-  if (!inCheck) { lastCheckAnnounced = false; return; }
+  if (!inCheck) {
+    board3d.highlightCheck(null);
+    if (!silent) lastCheckAnnounced = false;
+    return;
+  }
 
   const turnColor = localChess.turn();
   const kingSquare = findKingSquare(localChess, turnColor);
-  if (kingSquare) {
-    const el = document.querySelector('#board .square-' + kingSquare);
-    if (el) el.classList.add('in-check');
-  }
+  board3d.highlightCheck(kingSquare);
+  if (silent) return;
 
   const isMate = localChess.in_checkmate ? localChess.in_checkmate() : false;
   if (!lastCheckAnnounced) {
@@ -520,22 +526,20 @@ function startGameUI(state) {
   document.getElementById('moveHistory').innerHTML = '';
   updateClocks(state.clocks);
 
+  document.body.classList.add('in-game');
   showTopLevel('gameScreen');
 
   try {
-    const cfg = {
-      draggable: false, // click-to-move only - dragging was swallowing clicks unreliably
-      position: state.fen,
+    if (board3d) board3d.destroy();
+    board3d = new Board3D(document.getElementById('board'), {
       orientation: myColor === 'w' ? 'white' : 'black',
-      onMouseoverSquare: onMouseoverSquare,
-      onMouseoutSquare: onMouseoutSquare,
-      pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
-    };
-    board = Chessboard('board', cfg);
-    setTimeout(() => { if (board) board.resize(); highlightCheckIfAny(); }, 50);
+      onSquareClick: handleSquareClick
+    });
+    board3d.setPosition(chessToPiecesMap(localChess));
+    highlightCheckIfAny();
   } catch (err) {
-    console.error('Failed to create chess board:', err);
-    toast('Could not load the chess board. Check your internet connection and reload.');
+    console.error('Failed to create the 3D chess board:', err);
+    toast('Could not load the 3D board. Check your internet connection and reload.');
   }
 }
 
@@ -544,7 +548,7 @@ function updateGameUI(state) {
   currentGame = state;
   localChess = new Chess(state.fen);
   selectedSquare = null;
-  if (board) board.position(state.fen);
+  if (board3d) board3d.setPosition(chessToPiecesMap(localChess));
   updateClocks(state.clocks);
 
   if (state.history.length > priorMoveCount) {
@@ -578,9 +582,16 @@ function formatMs(ms) {
   return `${m}:${s}`;
 }
 
-document.getElementById('resignBtn').onclick = () => {
+function resignCurrentGame() {
   if (currentGame) socket.emit('game:resign', { gameId: currentGame.gameId });
-};
+}
+document.getElementById('resignBtn').onclick = resignCurrentGame;
+document.getElementById('topbarResignBtn').onclick = resignCurrentGame;
+
+// Mobile move-history drawer.
+const movePanel = document.getElementById('movePanel');
+document.getElementById('historyToggleBtn').onclick = () => movePanel.classList.toggle('open');
+document.getElementById('closeHistoryBtn').onclick = () => movePanel.classList.remove('open');
 
 function showGameOver(info) {
   document.getElementById('gameOverText').textContent = info.resultText;
@@ -591,10 +602,19 @@ function showGameOver(info) {
 document.getElementById('backToLobbyBtn').onclick = () => {
   document.getElementById('gameOverPopup').classList.add('hidden');
   currentGame = null;
-  clearCheckHighlight();
+  if (board3d) { board3d.destroy(); board3d = null; }
+  movePanel.classList.remove('open');
+  document.body.classList.remove('in-game');
   showTopLevel('appShell');
   showSection('playSection');
 };
+
+// Keep the 3D board's renderer sized to its container across resizes,
+// orientation changes, and the mobile keyboard opening/closing.
+window.addEventListener('resize', () => { if (board3d) board3d.resize(); });
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => { if (board3d) board3d.resize(); }, 250);
+});
 
 // ---------- Auto-login on page load ----------
 if (token) {
